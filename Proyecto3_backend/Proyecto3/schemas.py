@@ -1,17 +1,20 @@
 from pydantic import BaseModel
-from typing import List, Optional  # Asegúrate de importar Optional
+from typing import List, Optional
 from enum import Enum
+from sqlalchemy import Column, String, Enum as SQLAlchemyEnum, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from .database import Base
 
-# Enum para roles de usuario (reutilizando el mismo Enum que en models.py)
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    USER = "user"
+
+class SalaEnum(SQLAlchemyEnum ):
+    LAB_3 = "3.2B"
+    LAB_0 = "Lab piso 0"
 
 # Esquema base para usuarios
 class UserBase(BaseModel):
     nombre_usuario: str
     contrasena: str
-    role: Optional[UserRole] = UserRole.USER
+    email:strg
 
 # Esquema para mostrar un usuario
 class User(UserBase):
@@ -21,24 +24,12 @@ class User(UserBase):
     class Config:
         orm_mode = True  # Habilita el modo ORM para trabajar con SQLAlchemy
 
-# Esquema base para salas
-class SalaBase(BaseModel):
-    nombre: str
-    capacidad: int
-
-# Esquema para mostrar una sala
-class Sala(SalaBase):
-    id: int
-    reservas: List["Reserva"] = []  # Lista de reservas asociadas con la sala
-
-    class Config:
-        orm_mode = True  # Habilita el modo ORM para trabajar con SQLAlchemy
 
 # Asegúrate de definir la clase Reserva si no está definida en otro lugar
-class Reserva(BaseModel):  # Asegúrate de que esta clase esté definida
+class Reserva(BaseModel):
     id: str
     user_id: str
-    sala_id: int
+    sala: SalaEnum = SalaEnum.LAB_0  
 
     class Config:
         orm_mode = True
