@@ -23,17 +23,15 @@ def get_db():
     finally:
         db.close()
 
-
 #----------------------USERS--------------------------------
-        # Crear un nuevo usuario
-@app.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+# Crear un nuevo usuario
 @app.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.nombre_usuario == user.nombre_usuario).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Nombre de usuario ya registrado")
     
-    db_email = db.query(models.User).filter(models.User.email == user.email).first()  # Verificamos si el email ya existe
+    db_email = db.query(models.User).filter(models.User.email == user.email).first()
     if db_email:
         raise HTTPException(status_code=400, detail="Email ya registrado")
     
@@ -56,6 +54,7 @@ def get_user(user_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return user
 
+# Eliminar un usuario por ID
 @app.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: str, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -64,8 +63,7 @@ def delete_user(user_id: str, db: Session = Depends(get_db)):
     
     db.delete(user)
     db.commit()
-    
-    return {"detail": f"Usuario con email {user.email} elimi
+    return {"detail": f"Usuario con email {user.email} eliminado correctamente"}
 
 #----------------------SALAS--------------------------------
 # Crear una nueva sala
@@ -94,14 +92,13 @@ def get_sala(sala_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Sala no encontrada")
     return sala
 
-
 #----------------------RESERVAS-------------------------------
-# Crear una nueva reserva (sin sala_id y duración, ahora usamos SalaEnum)
+# Crear una nueva reserva
 @app.post("/reservas/", response_model=schemas.Reserva, status_code=status.HTTP_201_CREATED)
 def create_reserva(reserva: schemas.ReservaCreate, db: Session = Depends(get_db)):
     existing_reserva = db.query(models.Reserva).filter(
         models.Reserva.fecha == reserva.fecha,
-        models.Reserva.sala == reserva.sala  # Comparamos con la sala
+        models.Reserva.sala == reserva.sala
     ).first()
     
     if existing_reserva:
@@ -111,7 +108,7 @@ def create_reserva(reserva: schemas.ReservaCreate, db: Session = Depends(get_db)
         fecha=reserva.fecha,
         descripción=reserva.descripción,
         user_id=reserva.user_id,
-        sala=reserva.sala  # Usamos la sala de tipo SalaEnum
+        sala=reserva.sala
     )
     db.add(new_reserva)
     db.commit()
@@ -131,7 +128,7 @@ def get_reserva(reserva_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     return reserva
 
-# Actualizar una reserva por ID (sin sala_id y duración, solo usamos SalaEnum)
+# Actualizar una reserva por ID
 @app.put("/reservas/{reserva_id}", response_model=schemas.Reserva)
 def update_reserva(reserva_id: str, reserva_update: schemas.ReservaCreate, db: Session = Depends(get_db)):
     reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()
@@ -140,7 +137,7 @@ def update_reserva(reserva_id: str, reserva_update: schemas.ReservaCreate, db: S
     
     existing_reserva = db.query(models.Reserva).filter(
         models.Reserva.fecha == reserva_update.fecha,
-        models.Reserva.sala == reserva_update.sala,  # Verificamos que no exista otra reserva con la misma sala y fecha
+        models.Reserva.sala == reserva_update.sala,
         models.Reserva.id != reserva_id
     ).first()
     
@@ -150,7 +147,7 @@ def update_reserva(reserva_id: str, reserva_update: schemas.ReservaCreate, db: S
     reserva.fecha = reserva_update.fecha
     reserva.descripción = reserva_update.descripción
     reserva.user_id = reserva_update.user_id
-    reserva.sala = reserva_update.sala  # Actualizamos la sala con el nuevo valor
+    reserva.sala = reserva_update.sala
 
     db.commit()
     db.refresh(reserva)
@@ -166,3 +163,8 @@ def delete_reserva(reserva_id: str, db: Session = Depends(get_db)):
     db.delete(reserva)
     db.commit()
     return {"detail": "Reserva eliminada correctamente"}
+
+#----------------------MAIN-----------------------------------
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # La API se ejecutará en el puerto 8000
